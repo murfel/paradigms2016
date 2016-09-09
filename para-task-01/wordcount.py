@@ -46,7 +46,6 @@ def get_dict(filename):
                     d[word.lower()] += 1
                 else:
                     d[word.lower()] = 1
-    f.close()
     return d
 
 def print_words(filename):
@@ -58,8 +57,8 @@ def print_words(filename):
 def print_top(filename):
     d = get_dict(filename)
     l = sorted(d.items(), key=lambda x: x[1], reverse=True)[:20]
-    for word in l:
-        print(word[0], word[1])
+    for word, count in l:
+        print(word, count)
 
 ###
 

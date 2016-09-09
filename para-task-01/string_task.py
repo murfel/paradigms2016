@@ -26,33 +26,17 @@ def verbing(s):
 # Example output: 'This dinner is good!'
 def not_bad(s):
 
-    # Alternatively:
-    #not_ind = s.find('not')
-    #bad_ind = s.find('bad')
-    #...
-
     # More alternatively:
     #import re
-    ## The regex should be like '([\S\s]*)not[\s\S]*bad([\s\S]*)'
-    ## (see regexr.com/3e6go) Any suggestions?
-    #m = re.search('', s)
+    #m = re.search('(.*?)not.*?bad(.*)', s)
     #if m:
-    #    s = m.group(0) + 'good' + m.group(1)
+    #    s = m.group(1) + 'good' + m.group(2)
     #return s
 
-    found_not = False
-    found_bad = False
-    for i in range(len(s) - 2):
-        if not found_not:
-            if s[i:i + 3] == 'not':
-                found_not = True
-                not_ind = i
-        if not found_bad:
-            if s[i:i + 3] == 'bad':
-                found_bad = True
-                bad_ind = i
+    not_ind = s.find('not')
+    bad_ind = s.find('bad')
 
-    if found_not and found_bad and (not_ind < bad_ind):
+    if not_ind != -1 and bad_ind != -1 and (not_ind < bad_ind):
         s = s[:not_ind] + 'good' + s[bad_ind + 3:]
 
     return s
