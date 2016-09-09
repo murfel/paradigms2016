@@ -4,7 +4,8 @@
 # Example output: [1, 2, 3]
 def remove_adjacent(lst):
     new_lst = []
-    new_lst.append(lst[0])
+    if len(lst) != 0:
+        new_lst.append(lst[0])
 
     for i in range(1, len(lst)):
         if lst[i] != new_lst[-1]:
