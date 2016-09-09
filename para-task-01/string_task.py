@@ -8,7 +8,12 @@
 # Example input: 'read'
 # Example output: 'reading'
 def verbing(s):
-    return
+    if len(s) >= 3:
+        if s[-3:] == 'ing':
+            s = s + 'ly'
+        else:
+            s = s + 'ing'
+    return s
 
 
 # Given a string, find the first appearance of the
@@ -20,7 +25,37 @@ def verbing(s):
 # Example input: 'This dinner is not that bad!'
 # Example output: 'This dinner is good!'
 def not_bad(s):
-    return
+
+    # Alternatively:
+    #not_ind = s.find('not')
+    #bad_ind = s.find('bad')
+    #...
+
+    # More alternatively:
+    #import re
+    ## The regex should be like '([\S\s]*)not[\s\S]*bad([\s\S]*)'
+    ## (see regexr.com/3e6go) Any suggestions?
+    #m = re.search('', s)
+    #if m:
+    #    s = m.group(0) + 'good' + m.group(1)
+    #return s
+
+    found_not = False
+    found_bad = False
+    for i in range(len(s) - 2):
+        if not found_not:
+            if s[i:i + 3] == 'not':
+                found_not = True
+                not_ind = i
+        if not found_bad:
+            if s[i:i + 3] == 'bad':
+                found_bad = True
+                bad_ind = i
+
+    if found_not and found_bad and (not_ind < bad_ind):
+        s = s[:not_ind] + 'good' + s[bad_ind + 3:]
+
+    return s
 
 
 # Consider dividing a string into two halves.
@@ -34,4 +69,8 @@ def not_bad(s):
 # Example input: 'abcd', 'xy'
 # Example output: 'abxcdy'
 def front_back(a, b):
-    return
+    from math import ceil
+    a_mid = ceil(len(a) / 2)
+    b_mid = ceil(len(b) / 2)
+
+    return a[:a_mid] + b[:b_mid] + a[a_mid:] + b[b_mid:]

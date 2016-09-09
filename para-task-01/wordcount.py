@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Wordcount exercise
 Google's Python class
 
@@ -35,6 +36,30 @@ import sys
 # You could write a helper utility function that reads a file
 # and builds and returns a word/count dict for it.
 # Then print_words() and print_top() can just call the utility function.
+
+def get_dict(filename):
+    d = {}
+    with open(filename) as f:
+        for l in f:
+            for word in l.split():
+                if word.lower() in d.keys():
+                    d[word.lower()] += 1
+                else:
+                    d[word.lower()] = 1
+    f.close()
+    return d
+
+def print_words(filename):
+    d = get_dict(filename)
+    print('print_words')
+    for k, v in d.items():
+        print(k, v)
+
+def print_top(filename):
+    d = get_dict(filename)
+    l = sorted(d.items(), key=lambda x: x[1], reverse=True)[:20]
+    for word in l:
+        print(word[0], word[1])
 
 ###
 
