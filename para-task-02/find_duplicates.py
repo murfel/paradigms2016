@@ -6,27 +6,25 @@ import os
 import sys
 
 
-def find_duplicates(directory):
-    file_group = collections.defaultdict(set)
+def find_duplicates(top_dir):
+    hash_to_files = collections.defaultdict(set)
 
-    for dirpath, _, files in os.walk(directory):
+    for dirpath, _, files in os.walk(top_dir):
         for filename in files:
             rel_path = os.path.join(dirpath, filename)
-            if (filename.startswith('.') or filename.startswith('~')
-                    or os.path.islink(rel_path)):
+            if filename.startswith(('.', '~')) or os.path.islink(rel_path):
                 continue
-            file_hash = hashlib.sha1()
+            hasher = hashlib.sha1()
             with open(rel_path, mode='rb') as content:
                 while True:
                     data = content.read(1024)
                     if not data:
                         break
-                    file_hash.update(data)
-            file_hexdigest = file_hash.hexdigest()
-            file_shortname = os.path.relpath(rel_path, directory)
-            file_group[file_hexdigest].add(file_shortname)
+                    hasher.update(data)
+            hash_to_files[hasher.hexdigest()].add(
+                os.path.relpath(rel_path, top_dir))
 
-    for v in file_group.values():
+    for v in hash_to_files.values():
         if len(v) != 1:
             print(':'.join(v))
 
@@ -36,8 +34,8 @@ def main():
         print('Usage: ./find_duplicates.py path/to/directory')
         sys.exit(1)
 
-    directory = sys.argv[1]
-    find_duplicates(directory)
+    top_dir = sys.argv[1]
+    find_duplicates(top_dir)
 
 if __name__ == '__main__':
     main()
