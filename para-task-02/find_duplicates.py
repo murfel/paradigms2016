@@ -24,9 +24,9 @@ def find_duplicates(top_dir):
             hash_to_files[hasher.hexdigest()].add(
                 os.path.relpath(rel_path, top_dir))
 
-    for v in hash_to_files.values():
-        if len(v) != 1:
-            print(':'.join(v))
+    for files in hash_to_files.values():
+        if len(files) != 1:
+            print(':'.join(files))
 
 
 def main():
