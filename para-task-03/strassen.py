@@ -11,7 +11,7 @@ def bin_ceil(n):
 
 def split_mx_into_four(a):
     """Split a 2D numpy array into four equal arrays."""
-    return [mx for submx in np.split(a, 2) for mx in np.hsplit(submx, 2)]
+    return sum([np.hsplit(mx, 2) for mx in np.vsplit(a, 2)], [])
 
 
 def strassen(a, b):
