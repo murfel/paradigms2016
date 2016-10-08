@@ -3,6 +3,7 @@
 # Шаблон для домашнѣго задания
 # Рѣализуйте мѣтоды с raise NotImplementedError
 
+
 class Scope:
 
     """Scope - представляет доступ к значениям по именам
@@ -15,7 +16,16 @@ class Scope:
     """
 
     def __init__(self, parent=None):
-        raise NotImplementedError
+        self.parent = parent
+        self.scope = {}
+
+    def __getitem__(self, key):
+        if key in self.scope:
+            return self.scope[key]
+        return self.parent[key]
+
+    def __setitem__(self, key, item):
+        self.scope[key] = item
 
 
 class Number:
@@ -24,10 +34,10 @@ class Number:
     Все числа в нашем языке целые."""
 
     def __init__(self, value):
-        raise NotImplementedError
+        self.value = value
 
     def evaluate(self, scope):
-        raise NotImplementedError
+        return self
 
 
 class Function:
@@ -47,10 +57,15 @@ class Function:
     формальных параметров функции."""
 
     def __init__(self, args, body):
-        raise NotImplementedError
+        self.args = args
+        self.body = body
 
     def evaluate(self, scope):
-        raise NotImplementedError
+        # по-идеи, должен возвращать селф, но какой в этом смысл?
+        for statement in self.body:
+            if statement == self.body[-1]:
+                return statement.evaluate(scope)
+            statement.evaluate(scope)
 
 
 class FunctionDefinition:
@@ -62,10 +77,12 @@ class FunctionDefinition:
     добавляется новое значение типа Function."""
 
     def __init__(self, name, function):
-        raise NotImplementedError
+        self.name = name
+        self.function = function
 
     def evaluate(self, scope):
-        raise NotImplementedError
+        scope[self.name] = self.function
+        return self.function
 
 
 class Conditional:
@@ -74,11 +91,22 @@ class Conditional:
     Conditional - представляет ветвление в программе, т. е. if.
     """
 
-    def __init__(self, condtion, if_true, if_false=None):
-        raise NotImplementedError
+    def __init__(self, condition, if_true, if_false=None):
+        self.condition = condition
+        self.if_true = if_true
+        self.if_false = if_false
 
     def evaluate(self, scope):
-        raise NotImplementedError
+        if condition.evaluate(scope).value == Number(0).value:
+            for st in if_true:
+                if st == if_true[-1]:
+                    return st.evaluate(scope)
+                st.evaluate(scope)
+        else:
+            for st in if_false:
+                if st == if_false[-1]:
+                    return st.evaluate(scope)
+                st.evaluate(scope)
 
 
 class Print:
@@ -86,10 +114,10 @@ class Print:
     """Print - печатает значение выражения на отдельной строке."""
 
     def __init__(self, expr):
-        raise NotImplementedError
+        self.expr = expr
 
     def evaluate(self, scope):
-        raise NotImplementedError
+        print(self.expr.evaluate(scope).value)
 
 
 class Read:
@@ -101,10 +129,10 @@ class Read:
      """
 
     def __init__(self, name):
-        raise NotImplementedError
+        self.name = name
 
     def evaluate(self, scope):
-        raise NotImplementedError
+        scope[self.name] = Number(int(input()))
 
 
 class FunctionCall:
@@ -118,10 +146,15 @@ class FunctionCall:
     """
 
     def __init__(self, fun_expr, args):
-        raise NotImplementedError
+        self.fun_expr = fun_expr
+        self.args = args
 
     def evaluate(self, scope):
-        raise NotImplementedError
+        function = self.fun_expr.evaluate(scope)
+        call_scope = Scope(scope)
+        for i in range(len(function.args)):
+            call_scope[function.args[i]] = self.args[i].evaluate(scope)
+        return function.evaluate(call_scope)
 
 
 class Reference:
@@ -130,10 +163,10 @@ class Reference:
     (функции или переменной) по его имени."""
 
     def __init__(self, name):
-        raise NotImplementedError
+        self.name = name
 
     def evaluate(self, scope):
-        raise NotImplementedError
+        return scope[self.name]
 
 
 class BinaryOperation:
@@ -145,10 +178,15 @@ class BinaryOperation:
     “<”, “>”, “<=”, “>=”, “&&”, “||”."""
 
     def __init__(self, lhs, op, rhs):
-        raise NotImplementedError
+        self.lhs = lhs
+        self.op = op
+        self.rhs = rhs
 
     def evaluate(self, scope):
-        raise NotImplementedError
+        evaled_lhs = self.lhs.evaluate(scope)
+        evaled_rhs = self.rhs.evaluate(scope)
+        if self.op == '+':
+            return Number(evaled_lhs.value + evaled_rhs.value)
 
 
 class UnaryOperation:
@@ -158,10 +196,15 @@ class UnaryOperation:
     Поддерживаемые операции: “-”, “!”."""
 
     def __init__(self, op, expr):
-        raise NotImplementedError
+        self.op = op
+        self.expr = expr
 
     def evaluate(self, scope):
-        raise NotImplementedError
+        evaled_expr = self.expr.evaluate(scope)
+        if self.op == '-':
+            return Number(-evaled_expr.value)
+        elif self.op == '!':
+            return Number(not evaled_expr.value)
 
 
 def example():
@@ -179,9 +222,10 @@ def example():
     FunctionCall(FunctionDefinition('foo', parent['foo']),
                  [Number(5), UnaryOperation('-', Number(3))]).evaluate(scope)
 
+
 def my_tests():
     raise NotImplementedError
 
 if __name__ == '__main__':
     example()
-    my_tests()
+    #my_tests()
