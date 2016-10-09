@@ -99,10 +99,10 @@ class Conditional:
 
     def evaluate(self, scope):
         result = None
-        if (self.if_true and
-                self.condition.evaluate(scope).value != Number(0).value):
-            for statement in self.if_true:
-                result = statement.evaluate(scope)
+        if self.condition.evaluate(scope).value != Number(0).value:
+            if self.if_true:
+                for statement in self.if_true:
+                    result = statement.evaluate(scope)
         elif self.if_false:
             for statement in self.if_false:
                 result = statement.evaluate(scope)
@@ -154,8 +154,8 @@ class FunctionCall:
     def evaluate(self, scope):
         function = self.fun_expr.evaluate(scope)
         call_scope = Scope(scope)
-        for param, arg in zip(function.args, self.args):
-            call_scope[param] = arg.evaluate(scope)
+        for fun_arg, passed_arg in zip(function.args, self.args):
+            call_scope[fun_arg] = passed_arg.evaluate(scope)
         return function.evaluate(call_scope)
 
 
@@ -312,11 +312,13 @@ def my_tests():
     parent['p_a'] = Number(42)
     parent['p_step'] = Number(2)
 
+    print("Should print '\\n10\\n20':")
     parent['p_b'] = Number(10)
     assert FunctionCall(FunctionDefinition('foo', parent['p_foo']),
                         [Reference('p_a'), Reference('p_step')],
                         ).evaluate(parent).value == Number(-20).value
 
+    print("Should print '\\n42\\n-84'")
     parent['p_b'] = Number(100)
     assert FunctionCall(FunctionDefinition('foo', parent['p_foo']),
                         [Reference('p_a'), Reference('p_step')],
@@ -328,13 +330,23 @@ def my_tests():
     assert BinOp(Number(0), '&&', Number(2)).evaluate(
         parent).value == Number(0).value
 
+    assert BinOp(Number(0), '||', Number(0)).evaluate(
+        parent).value == Number(0).value
+    assert BinOp(Number(0), '||', Number(2)).evaluate(
+        parent).value != Number(0).value
+
     print('Should print 42: ', end='')
     assert Print(Number(42)).evaluate(parent).value == Number(42).value
 
-    # Uncomment to test Read (manual input required)
-    # print('Enter 42: ', end='')
-    # Read('a').evaluate(parent)
-    # assert parent['a'].value == Number(42).value
+    try:
+        Conditional(Number(1), None).evaluate(parent)
+    except TypeError:
+        raise AssertionError
+
+    # Testing Read, manual input required
+    print('Enter 42: ', end='')
+    Read('a').evaluate(parent)
+    assert parent['a'].value == Number(42).value
 
 
 if __name__ == '__main__':
