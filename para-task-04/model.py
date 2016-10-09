@@ -3,6 +3,8 @@
 # Шаблон для домашнѣго задания
 # Рѣализуйте мѣтоды с raise NotImplementedError
 
+import operator
+
 
 class Scope:
 
@@ -61,11 +63,10 @@ class Function:
         self.body = body
 
     def evaluate(self, scope):
-        # по-идеи, должен возвращать селф, но какой в этом смысл?
+        result = None
         for statement in self.body:
-            if statement == self.body[-1]:
-                return statement.evaluate(scope)
-            statement.evaluate(scope)
+            result = statement.evaluate(scope)
+        return result
 
 
 class FunctionDefinition:
@@ -97,16 +98,14 @@ class Conditional:
         self.if_false = if_false
 
     def evaluate(self, scope):
-        if condition.evaluate(scope).value == Number(0).value:
-            for st in if_true:
-                if st == if_true[-1]:
-                    return st.evaluate(scope)
-                st.evaluate(scope)
-        else:
-            for st in if_false:
-                if st == if_false[-1]:
-                    return st.evaluate(scope)
-                st.evaluate(scope)
+        result = None
+        if self.condition.evaluate(scope).value != Number(0).value:
+            for statement in self.if_true:
+                result = statement.evaluate(scope)
+        elif self.if_false:
+            for statement in self.if_false:
+                result = statement.evaluate(scope)
+        return result
 
 
 class Print:
@@ -117,7 +116,8 @@ class Print:
         self.expr = expr
 
     def evaluate(self, scope):
-        print(self.expr.evaluate(scope).value)
+        result = self.expr.evaluate(scope).value
+        return print(result)
 
 
 class Read:
@@ -152,8 +152,8 @@ class FunctionCall:
     def evaluate(self, scope):
         function = self.fun_expr.evaluate(scope)
         call_scope = Scope(scope)
-        for i in range(len(function.args)):
-            call_scope[function.args[i]] = self.args[i].evaluate(scope)
+        for param, arg in zip(function.args, self.args):
+            call_scope[param] = arg.evaluate(scope)
         return function.evaluate(call_scope)
 
 
@@ -177,16 +177,30 @@ class BinaryOperation:
     “+”, “-”, “*”, “/”, “%”, “==”, “!=”,
     “<”, “>”, “<=”, “>=”, “&&”, “||”."""
 
+    sym_to_op = {'+': operator.add,
+                 '-': operator.sub,
+                 '*': operator.mul,
+                 '/': operator.floordiv,
+                 '%': operator.mod,
+                 '==': operator.eq,
+                 '!=': operator.ne,
+                 '<': operator.lt,
+                 '>': operator.gt,
+                 '<=': operator.le,
+                 '>=': operator.ge,
+                 '&&': operator.and_,
+                 '||': operator.or_,
+                 }
+
     def __init__(self, lhs, op, rhs):
         self.lhs = lhs
         self.op = op
         self.rhs = rhs
 
     def evaluate(self, scope):
-        evaled_lhs = self.lhs.evaluate(scope)
-        evaled_rhs = self.rhs.evaluate(scope)
-        if self.op == '+':
-            return Number(evaled_lhs.value + evaled_rhs.value)
+        lhs_value = self.lhs.evaluate(scope).value
+        rhs_value = self.rhs.evaluate(scope).value
+        return Number(int(self.sym_to_op[self.op](lhs_value, rhs_value)))
 
 
 class UnaryOperation:
@@ -195,19 +209,30 @@ class UnaryOperation:
     Результатом вычисления унарной операции является объект Number.
     Поддерживаемые операции: “-”, “!”."""
 
+    sym_to_op = {'-': operator.neg,
+                 '!': operator.not_,
+                 }
+
     def __init__(self, op, expr):
         self.op = op
         self.expr = expr
 
     def evaluate(self, scope):
-        evaled_expr = self.expr.evaluate(scope)
-        if self.op == '-':
-            return Number(-evaled_expr.value)
-        elif self.op == '!':
-            return Number(not evaled_expr.value)
+        expr_value = self.expr.evaluate(scope).value
+        return Number(self.sym_to_op[self.op](expr_value))
 
 
 def example():
+    """
+    Example test (roughly):
+
+    def foo(hello, world):
+        return print(hello + world)
+
+    foo(5, -(3))
+
+    """
+
     parent = Scope()
     parent["foo"] = Function(('hello', 'world'),
                              [Print(BinaryOperation(Reference('hello'),
@@ -215,17 +240,63 @@ def example():
                                                     Reference('world')))])
     parent["bar"] = Number(10)
     scope = Scope(parent)
-    assert 10 == scope["bar"].value
+    assert scope["bar"].value == 10
     scope["bar"] = Number(20)
     assert scope["bar"].value == 20
-    print('It should print 2: ', end=' ')
+    print('It should print 2: ', end='')
     FunctionCall(FunctionDefinition('foo', parent['foo']),
-                 [Number(5), UnaryOperation('-', Number(3))]).evaluate(scope)
+                 [Number(5), UnaryOperation('-', Number(3))]
+                 ).evaluate(scope)
 
 
 def my_tests():
-    raise NotImplementedError
+    """
+    Test 1
+
+    def foo(a, step):
+        b = int(input())
+        if a < b:
+            print(a)
+            print(a + (-step))
+            return a + (-step)
+        else:
+            print(b)
+            print(b + (-step))
+            return b + (-step)
+
+    p_a = 42
+    p_step = 2
+
+    foo(5, 2)
+    """
+    parent = Scope()
+
+    # Test 1
+    parent['p_foo'] = (
+    Function(('a', 'step'),
+             [Read('b'),
+              Conditional(BinaryOperation(Reference('a'), '<', Reference('b')),
+                          [Print(Reference('a')),
+                           Print(BinaryOperation(Reference('a'),
+                                                 '*',
+                                                 UnaryOperation('-', Reference('step'))))],
+                          [Print(Reference('b')),
+                           Print(BinaryOperation(Reference('b'),
+                                                 '*',
+                                                 UnaryOperation('-', Reference('step'))))]
+                          )
+              ]
+             )
+    )
+
+    parent['p_a'] = Number(42)
+    parent['p_step'] = Number(2)
+
+    FunctionCall(FunctionDefinition('foo', parent['p_foo']),
+                 [Reference('p_a'), Reference('p_step')],
+                 ).evaluate(parent)
+
 
 if __name__ == '__main__':
     example()
-    #my_tests()
+    my_tests()
