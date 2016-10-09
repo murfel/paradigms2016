@@ -99,7 +99,8 @@ class Conditional:
 
     def evaluate(self, scope):
         result = None
-        if self.condition.evaluate(scope).value != Number(0).value:
+        if (self.if_true and
+                self.condition.evaluate(scope).value != Number(0).value):
             for statement in self.if_true:
                 result = statement.evaluate(scope)
         elif self.if_false:
@@ -116,8 +117,9 @@ class Print:
         self.expr = expr
 
     def evaluate(self, scope):
-        result = self.expr.evaluate(scope).value
-        return print(result)
+        result = self.expr.evaluate(scope)
+        print(result.value)
+        return result
 
 
 class Read:
@@ -177,30 +179,31 @@ class BinaryOperation:
     “+”, “-”, “*”, “/”, “%”, “==”, “!=”,
     “<”, “>”, “<=”, “>=”, “&&”, “||”."""
 
-    sym_to_op = {'+': operator.add,
-                 '-': operator.sub,
-                 '*': operator.mul,
-                 '/': operator.floordiv,
-                 '%': operator.mod,
-                 '==': operator.eq,
-                 '!=': operator.ne,
-                 '<': operator.lt,
-                 '>': operator.gt,
-                 '<=': operator.le,
-                 '>=': operator.ge,
-                 '&&': operator.and_,
-                 '||': operator.or_,
-                 }
+    sym_to_op = {
+        '+': operator.add,
+        '-': operator.sub,
+        '*': operator.mul,
+        '/': operator.floordiv,
+        '%': operator.mod,
+        '==': operator.eq,
+        '!=': operator.ne,
+        '<': operator.lt,
+        '>': operator.gt,
+        '<=': operator.le,
+        '>=': operator.ge,
+        '&&': lambda a, b: bool(a) and bool(b),
+        '||': lambda a, b: bool(a) or bool(b),
+    }
 
     def __init__(self, lhs, op, rhs):
-        self.lhs = lhs
+        self.lhs = cast_type(lhs)
         self.op = op
-        self.rhs = rhs
+        self.rhs = cast_type(rhs)
 
     def evaluate(self, scope):
-        lhs_value = self.lhs.evaluate(scope).value
-        rhs_value = self.rhs.evaluate(scope).value
-        return Number(int(self.sym_to_op[self.op](lhs_value, rhs_value)))
+        lval = self.lhs.evaluate(scope).value
+        rval = self.rhs.evaluate(scope).value
+        return Number(int(self.sym_to_op[self.op](lval, rval)))
 
 
 class UnaryOperation:
@@ -209,17 +212,26 @@ class UnaryOperation:
     Результатом вычисления унарной операции является объект Number.
     Поддерживаемые операции: “-”, “!”."""
 
-    sym_to_op = {'-': operator.neg,
-                 '!': operator.not_,
-                 }
+    sym_to_op = {
+        '-': operator.neg,
+        '!': operator.not_,
+    }
 
     def __init__(self, op, expr):
         self.op = op
-        self.expr = expr
+        self.expr = cast_type(expr)
 
     def evaluate(self, scope):
         expr_value = self.expr.evaluate(scope).value
         return Number(self.sym_to_op[self.op](expr_value))
+
+
+def cast_type(expr):
+    if isinstance(expr, str):
+        return Reference(expr)
+    elif isinstance(expr, int):
+        return Number(expr)
+    return expr
 
 
 def example():
@@ -251,50 +263,78 @@ def example():
 
 def my_tests():
     """
-    Test 1
+    Test 1 (Python equivalent):
 
     def foo(a, step):
-        b = int(input())
-        if a < b:
+        p_b
+        if a < p_b:
             print(a)
             print(a + (-step))
             return a + (-step)
         else:
-            print(b)
-            print(b + (-step))
-            return b + (-step)
+            print(p_b)
+            print(p_b + (-step))
+            return p_b + (-step)
 
     p_a = 42
     p_step = 2
 
-    foo(5, 2)
+    p_b = 10
+    foo(p_a, p_step)
+
+    p_b = 100
+    foo(p_a, p_step)
     """
+
+    If = Conditional
+    BinOp = BinaryOperation
+    UnOp = UnaryOperation
+
     parent = Scope()
 
     # Test 1
-    parent['p_foo'] = (
-    Function(('a', 'step'),
-             [Read('b'),
-              Conditional(BinaryOperation(Reference('a'), '<', Reference('b')),
-                          [Print(Reference('a')),
-                           Print(BinaryOperation(Reference('a'),
+    parent['p_foo'] = (Function(('a', 'step'),
+                                [Reference('p_b'),
+                                 If(BinOp('a', '<', 'p_b'),
+                                    [Print(Reference('a')),
+                                     Print(BinOp('a',
                                                  '*',
-                                                 UnaryOperation('-', Reference('step'))))],
-                          [Print(Reference('b')),
-                           Print(BinaryOperation(Reference('b'),
+                                                 UnOp('-', 'step')))],
+                                    [Print(Reference('p_b')),
+                                     Print(BinOp('p_b',
                                                  '*',
-                                                 UnaryOperation('-', Reference('step'))))]
-                          )
-              ]
-             )
-    )
+                                                 UnOp('-', 'step')))]
+                                    )
+                                 ]
+                                )
+                       )
 
     parent['p_a'] = Number(42)
     parent['p_step'] = Number(2)
 
-    FunctionCall(FunctionDefinition('foo', parent['p_foo']),
-                 [Reference('p_a'), Reference('p_step')],
-                 ).evaluate(parent)
+    parent['p_b'] = Number(10)
+    assert FunctionCall(FunctionDefinition('foo', parent['p_foo']),
+                        [Reference('p_a'), Reference('p_step')],
+                        ).evaluate(parent).value == Number(-20).value
+
+    parent['p_b'] = Number(100)
+    assert FunctionCall(FunctionDefinition('foo', parent['p_foo']),
+                        [Reference('p_a'), Reference('p_step')],
+                        ).evaluate(parent).value == Number(-84).value
+
+    # Other tests
+    assert BinOp(Number(1), '&&', Number(2)).evaluate(
+        parent).value != Number(0).value
+    assert BinOp(Number(0), '&&', Number(2)).evaluate(
+        parent).value == Number(0).value
+
+    print('Should print 42: ', end='')
+    assert Print(Number(42)).evaluate(parent).value == Number(42).value
+
+    # Uncomment to test Read (manual input required)
+    # print('Enter 42: ', end='')
+    # Read('a').evaluate(parent)
+    # assert parent['a'].value == Number(42).value
 
 
 if __name__ == '__main__':
