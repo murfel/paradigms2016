@@ -102,8 +102,10 @@ class Conditional:
 
     def evaluate(self, scope):
         result = None
-        expr_list = (self.if_true if self.condition.evaluate(scope)
-                     != Number(0) else self.if_false)
+        if self.condition.evaluate(scope) != Number(0):
+            expr_list = self.if_true
+        else:
+            expr_list = self.if_false
         if expr_list:
             for stmt in expr_list:
                 result = stmt.evaluate(scope)
@@ -341,13 +343,8 @@ def my_tests():
     # Test Scope
     parent['p_foo'] = Function([], [])
     scope = Scope(parent)
+    assert not scope.scope
     assert isinstance(scope['p_foo'], Function)
-
-    try:
-        scope['zoo']  # undefined behaviour, 'zoo' not found
-        raise AssertionError
-    except:
-        pass
 
     # Testing Read, manual input required
     print('Enter 42: ', end='')
