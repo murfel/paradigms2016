@@ -154,8 +154,8 @@ class FunctionCall:
     def evaluate(self, scope):
         function = self.fun_expr.evaluate(scope)
         call_scope = Scope(scope)
-        for fun_arg, passed_arg in zip(function.args, self.args):
-            call_scope[fun_arg] = passed_arg.evaluate(scope)
+        for name, value_expr in zip(function.args, self.args):
+            call_scope[name] = value_expr.evaluate(scope)
         return function.evaluate(call_scope)
 
 
@@ -196,9 +196,9 @@ class BinaryOperation:
     }
 
     def __init__(self, lhs, op, rhs):
-        self.lhs = cast_type(lhs)
+        self.lhs = lhs
         self.op = op
-        self.rhs = cast_type(rhs)
+        self.rhs = rhs
 
     def evaluate(self, scope):
         lval = self.lhs.evaluate(scope).value
@@ -219,19 +219,11 @@ class UnaryOperation:
 
     def __init__(self, op, expr):
         self.op = op
-        self.expr = cast_type(expr)
+        self.expr = expr
 
     def evaluate(self, scope):
         expr_value = self.expr.evaluate(scope).value
         return Number(self.sym_to_op[self.op](expr_value))
-
-
-def cast_type(expr):
-    if isinstance(expr, str):
-        return Reference(expr)
-    elif isinstance(expr, int):
-        return Number(expr)
-    return expr
 
 
 def example():
@@ -295,15 +287,19 @@ def my_tests():
     # Test 1
     parent['p_foo'] = (Function(('a', 'step'),
                                 [Reference('p_b'),
-                                 If(BinOp('a', '<', 'p_b'),
+                                 If(BinOp(Reference('a'),
+                                          '<',
+                                          Reference('p_b')),
                                     [Print(Reference('a')),
-                                     Print(BinOp('a',
+                                     Print(BinOp(Reference('a'),
                                                  '*',
-                                                 UnOp('-', 'step')))],
+                                                 UnOp('-',
+                                                      Reference('step'))))],
                                     [Print(Reference('p_b')),
-                                     Print(BinOp('p_b',
+                                     Print(BinOp(Reference('p_b'),
                                                  '*',
-                                                 UnOp('-', 'step')))]
+                                                 UnOp('-',
+                                                      Reference('step'))))]
                                     )
                                  ]
                                 )
@@ -318,7 +314,7 @@ def my_tests():
                         [Reference('p_a'), Reference('p_step')],
                         ).evaluate(parent).value == Number(-20).value
 
-    print("Should print '\\n42\\n-84'")
+    print("Should print '\\n42\\n-84':")
     parent['p_b'] = Number(100)
     assert FunctionCall(FunctionDefinition('foo', parent['p_foo']),
                         [Reference('p_a'), Reference('p_step')],
@@ -338,10 +334,8 @@ def my_tests():
     print('Should print 42: ', end='')
     assert Print(Number(42)).evaluate(parent).value == Number(42).value
 
-    try:
-        Conditional(Number(1), None).evaluate(parent)
-    except TypeError:
-        raise AssertionError
+    assert Conditional(Number(1), None).evaluate(parent) is None
+    assert Conditional(Number(1), []).evaluate(parent) is None
 
     # Testing Read, manual input required
     print('Enter 42: ', end='')
