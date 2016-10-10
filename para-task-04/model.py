@@ -38,6 +38,9 @@ class Number:
     def __init__(self, value):
         self.value = value
 
+    def __eq__(self, other):
+        return self.value == other.value
+
     def evaluate(self, scope):
         return self
 
@@ -64,8 +67,8 @@ class Function:
 
     def evaluate(self, scope):
         result = None
-        for statement in self.body:
-            result = statement.evaluate(scope)
+        for stmt in self.body:
+            result = stmt.evaluate(scope)
         return result
 
 
@@ -99,13 +102,11 @@ class Conditional:
 
     def evaluate(self, scope):
         result = None
-        if self.condition.evaluate(scope).value != Number(0).value:
-            if self.if_true:
-                for statement in self.if_true:
-                    result = statement.evaluate(scope)
-        elif self.if_false:
-            for statement in self.if_false:
-                result = statement.evaluate(scope)
+        expr_list = (self.if_true if self.condition.evaluate(scope)
+                     != Number(0) else self.if_false)
+        if expr_list:
+            for stmt in expr_list:
+                result = stmt.evaluate(scope)
         return result
 
 
@@ -191,8 +192,8 @@ class BinaryOperation:
         '>': operator.gt,
         '<=': operator.le,
         '>=': operator.ge,
-        '&&': lambda a, b: bool(a) and bool(b),
-        '||': lambda a, b: bool(a) or bool(b),
+        '&&': lambda a, b: a and b,
+        '||': lambda a, b: a or b,
     }
 
     def __init__(self, lhs, op, rhs):
@@ -308,39 +309,50 @@ def my_tests():
     parent['p_a'] = Number(42)
     parent['p_step'] = Number(2)
 
-    print("Should print '\\n10\\n20':")
+    print("Should print '\\n10\\n-20':")
     parent['p_b'] = Number(10)
     assert FunctionCall(FunctionDefinition('foo', parent['p_foo']),
                         [Reference('p_a'), Reference('p_step')],
-                        ).evaluate(parent).value == Number(-20).value
+                        ).evaluate(parent) == Number(-20)
 
     print("Should print '\\n42\\n-84':")
     parent['p_b'] = Number(100)
     assert FunctionCall(FunctionDefinition('foo', parent['p_foo']),
                         [Reference('p_a'), Reference('p_step')],
-                        ).evaluate(parent).value == Number(-84).value
+                        ).evaluate(parent) == Number(-84)
+
+    parent['p_bar'] = Function((), [])
+    assert FunctionCall(FunctionDefinition('bar', parent['p_bar']),
+                        [Number(1)]).evaluate(parent) is None
 
     # Other tests
-    assert BinOp(Number(1), '&&', Number(2)).evaluate(
-        parent).value != Number(0).value
-    assert BinOp(Number(0), '&&', Number(2)).evaluate(
-        parent).value == Number(0).value
+    assert BinOp(Number(1), '&&', Number(2)).evaluate(parent) != Number(0)
+    assert BinOp(Number(0), '&&', Number(2)).evaluate(parent) == Number(0)
 
-    assert BinOp(Number(0), '||', Number(0)).evaluate(
-        parent).value == Number(0).value
-    assert BinOp(Number(0), '||', Number(2)).evaluate(
-        parent).value != Number(0).value
+    assert BinOp(Number(0), '||', Number(0)).evaluate(parent) == Number(0)
+    assert BinOp(Number(0), '||', Number(2)).evaluate(parent) != Number(0)
 
     print('Should print 42: ', end='')
-    assert Print(Number(42)).evaluate(parent).value == Number(42).value
+    assert Print(Number(42)).evaluate(parent) == Number(42)
 
     assert Conditional(Number(1), None).evaluate(parent) is None
     assert Conditional(Number(1), []).evaluate(parent) is None
 
+    # Test Scope
+    parent['p_foo'] = Function([], [])
+    scope = Scope(parent)
+    assert isinstance(scope['p_foo'], Function)
+
+    try:
+        scope['zoo']  # undefined behaviour, 'zoo' not found
+        raise AssertionError
+    except:
+        pass
+
     # Testing Read, manual input required
     print('Enter 42: ', end='')
     Read('a').evaluate(parent)
-    assert parent['a'].value == Number(42).value
+    assert parent['a'] == Number(42)
 
 
 if __name__ == '__main__':
