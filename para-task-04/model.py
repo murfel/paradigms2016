@@ -343,8 +343,17 @@ def my_tests():
     # Test Scope
     parent['p_foo'] = Function([], [])
     scope = Scope(parent)
+    assert scope.scope != parent.scope
     assert not scope.scope
     assert isinstance(scope['p_foo'], Function)
+
+    # Manual input required
+    parent['a'] = Number(42)
+    print('Enter 10: ', end='')
+    parent['p_bar'] = Function((), [Read('a')])
+    FunctionCall(FunctionDefinition('bar', parent['p_bar']), []).evaluate(
+        parent)
+    assert parent['a'] == Number(42)
 
     # Testing Read, manual input required
     print('Enter 42: ', end='')
