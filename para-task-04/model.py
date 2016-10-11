@@ -101,11 +101,11 @@ class Conditional:
         self.if_false = if_false
 
     def evaluate(self, scope):
-        result = None
         if self.condition.evaluate(scope) != Number(0):
             expr_list = self.if_true
         else:
             expr_list = self.if_false
+        result = None
         if expr_list:
             for stmt in expr_list:
                 result = stmt.evaluate(scope)
@@ -264,12 +264,12 @@ def my_tests():
         p_b
         if a < p_b:
             print(a)
-            print(a + (-step))
-            return a + (-step)
+            print(a * (-step))
+            return a * (-step)
         else:
             print(p_b)
-            print(p_b + (-step))
-            return p_b + (-step)
+            print(p_b * (-step))
+            return p_b * (-step)
 
     p_a = 42
     p_step = 2
