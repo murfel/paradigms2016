@@ -41,6 +41,9 @@ class Number:
     def __eq__(self, other):
         return self.value == other.value
 
+    def accept(self, visitor):
+        visitor.visit_number(self)
+
     def evaluate(self, scope):
         return self
 
@@ -84,6 +87,9 @@ class FunctionDefinition:
         self.name = name
         self.function = function
 
+    def accept(self, visitor):
+        visitor.visit_function_definition(self)
+
     def evaluate(self, scope):
         scope[self.name] = self.function
         return self.function
@@ -99,6 +105,9 @@ class Conditional:
         self.condition = condition
         self.if_true = if_true
         self.if_false = if_false
+
+    def accept(self, visitor):
+        visitor.visit_conditional(self)
 
     def evaluate(self, scope):
         if self.condition.evaluate(scope) != Number(0):
@@ -119,6 +128,9 @@ class Print:
     def __init__(self, expr):
         self.expr = expr
 
+    def accept(self, visitor):
+        visitor.visit_print(self)
+
     def evaluate(self, scope):
         result = self.expr.evaluate(scope)
         print(result.value)
@@ -135,6 +147,9 @@ class Read:
 
     def __init__(self, name):
         self.name = name
+
+    def accept(self, visitor):
+        visitor.visit_read(self)
 
     def evaluate(self, scope):
         scope[self.name] = Number(int(input()))
@@ -154,6 +169,9 @@ class FunctionCall:
         self.fun_expr = fun_expr
         self.args = args
 
+    def accept(self, visitor):
+        visitor.visit_function_call(self)
+
     def evaluate(self, scope):
         function = self.fun_expr.evaluate(scope)
         call_scope = Scope(scope)
@@ -169,6 +187,9 @@ class Reference:
 
     def __init__(self, name):
         self.name = name
+
+    def accept(self, visitor):
+        visitor.visit_reference(self)
 
     def evaluate(self, scope):
         return scope[self.name]
@@ -203,6 +224,9 @@ class BinaryOperation:
         self.op = op
         self.rhs = rhs
 
+    def accept(self, visitor):
+        visitor.visit_binary_operation(self)
+
     def evaluate(self, scope):
         lval = self.lhs.evaluate(scope).value
         rval = self.rhs.evaluate(scope).value
@@ -223,6 +247,9 @@ class UnaryOperation:
     def __init__(self, op, expr):
         self.op = op
         self.expr = expr
+
+    def accept(self, visitor):
+        visitor.visit_unary_operation(self)
 
     def evaluate(self, scope):
         expr_value = self.expr.evaluate(scope).value
@@ -359,7 +386,6 @@ def my_tests():
     print('Enter 42: ', end='')
     Read('a').evaluate(parent)
     assert parent['a'] == Number(42)
-
 
 if __name__ == '__main__':
     example()
