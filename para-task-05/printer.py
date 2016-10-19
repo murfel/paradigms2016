@@ -3,120 +3,90 @@
 from yat.model import *
 
 
-class PrettyPrinter:
-
-    ident = 4 * ' '
+class Arithm:
 
     def visit(self, tree):
-        self.result = ''
-        self.ident_level = 0
-        self.sentence = True
-
         tree.accept(self)
-        print(self.result)
+        return self.result
 
     def visit_number(self, num):
-        sentence = self.sentence
-        self.sentence = False
-        self.result += str(num.value)
-        self.complete_if_sentence(sentence)
-
-    def visit_function_definition(self, func_def):
-        sentence = self.sentence
-        self.sentence = False
-        self.result += self.ident_level * self.ident + 'def ' + func_def.name
-        self.add_arg_block(func_def.function.args)
-        self.ident_level += 1
-        self.add_stmt_block(func_def.function.body)
-        self.ident_level -= 1
-        self.complete_if_sentence(sentence)
-
-    def visit_conditional(self, cond):
-        self.result += 'if ('
-        self.sentence = False
-        cond.condition.accept(self)
-        self.result += ')'
-
-        self.sentence = True
-        self.ident_level += 1
-        self.add_stmt_block(cond.if_true)
-
-        self.sentence = True
-        if cond.if_false:
-            self.result += ' else '
-            self.add_stmt_block(cond.if_false)
-
-        self.complete_if_sentence(True)
-        self.ident_level -= 1
-
-    def visit_print(self, print):
-        self.result += 'print '
-        self.sentence = False
-        print.expr.accept(self)
-        self.complete_if_sentence(True)
-
-    def visit_read(self, read):
-        self.result += 'read ' + read.name
-        self.complete_if_sentence(True)
-
-    def visit_function_call(self, func_call):
-        sentence = self.sentence
-        self.sentence = False
-        func_call.fun_expr.accept(self)
-        self.add_arg_block(func_call.args)
-        self.complete_if_sentence(sentence)
+        self.result = str(num.value)
 
     def visit_reference(self, ref):
-        self.result += ref.name
-        self.complete_if_sentence(self.sentence)
+        self.result = ref.name
 
     def visit_binary_operation(self, binop):
-        self.result += '(('
-        sentence = self.sentence
-        self.sentence = False
-        binop.lhs.accept(self)
-        self.result += ') ' + binop.op + ' ('
-        binop.rhs.accept(self)
-        self.result += '))'
-        self.complete_if_sentence(sentence)
+        self.result = '({} {} {})'.format(
+            self.visit(binop.lhs), binop.op, self.visit(binop.rhs))
 
     def visit_unary_operation(self, unop):
-        self.result += '(' + unop.op + '('
-        sentence = self.sentence
-        self.sentence = False
-        unop.expr.accept(self)
-        self.result += '))'
-        self.complete_if_sentence(sentence)
+        self.result = '({}{})'.format(unop.op, self.visit(unop.expr))
+
+    def visit_function_call(self, func_call):
+        self.result = '{}({})'.format(func_call.fun_expr.name, ', '.join(
+            [self.visit(arg) for arg in func_call.args]))
+
+
+class PrettyPrinter:
+
+    def __init__(self, indent=4 * ' '):
+        self.indent = indent
+
+    def visit(self, tree):
+        self.visit_silently(tree)
+        print('\n'.join(self.result))
+
+    def visit_silently(self, tree):
+        self.result = []
+        tree.accept(self)
+        return self.result
+
+    def visit_function_definition(self, func_def):
+        self.result.append('def {}({}) {{'.format(func_def.name, ', '.join(
+            [Arithm().visit(arg) for arg in func_def.function.args])))
+        self.add_stmt_block(func_def.function.body)
+        self.result.append('};')
+
+    def visit_conditional(self, cond):
+        self.result.append('if ({}) {{'.format(Arithm().visit(cond.condition)))
+        self.add_stmt_block(cond.if_true)
+        if cond.if_false:
+            self.result.append('} else {')
+            self.add_stmt_block(cond.if_false)
+        self.result.append('};')
+
+    def visit_print(self, print_stmt):
+        self.result.append('print {};'.format(Arithm().visit(print_stmt.expr)))
+
+    def visit_read(self, read):
+        self.result.append('read {};'.format(read.name))
+
+    def visit_arithm_as_sentence(self, expr):
+        self.result.append(Arithm().visit(expr) + ';')
 
     def add_stmt_block(self, stmt_block):
-        self.result += ' {'
         for stmt in stmt_block:
-            self.sentence = True
-            self.result += '\n' + self.ident_level * self.ident
-            stmt.accept(self)
-        self.result += '\n' + (self.ident_level - 1) * self.ident + '}'
+            for line in PrettyPrinter(self.indent).visit_silently(stmt):
+                self.result.append('{}{}'.format(self.indent, line))
 
-    def add_arg_block(self, expr_block):
-        self.result += '('
-        for arg in expr_block:
-            arg.accept(self)
-            self.result += ', '
-        if expr_block:
-            self.result = self.result[:-2]
-        self.result += ')'
-
-    def complete_if_sentence(self, sentence):
-        if sentence:
-            self.result += ';'
+    visit_number = visit_arithm_as_sentence
+    visit_reference = visit_arithm_as_sentence
+    visit_binary_operation = visit_arithm_as_sentence
+    visit_unary_operation = visit_arithm_as_sentence
+    visit_function_call = visit_arithm_as_sentence
 
 
 def my_tests():
     number = Number(42)
-    conditional = Conditional(number, [], [])
+    conditional = Conditional(number, [Number(1), Number(2), Number(3)],
+                              [Number(4), Number(5), Number(6)])
     printer = PrettyPrinter()
     printer.visit(conditional)
 
-    function = Function([], [conditional, Number(5)])
+    conditional2 = Conditional(number, [conditional])
+
+    function = Function([Reference('x'), Reference('y')],
+                        [conditional2, Number(5)])
     definition = FunctionDefinition('foo', function)
     printer = PrettyPrinter()
     printer.visit(definition)
