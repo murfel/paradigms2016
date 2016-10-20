@@ -138,6 +138,7 @@ class Read:
 
     def evaluate(self, scope):
         scope[self.name] = Number(int(input()))
+        return scope[self.name]
 
 
 class FunctionCall:
@@ -357,7 +358,7 @@ def my_tests():
 
     # Testing Read, manual input required
     print('Enter 42: ', end='')
-    Read('a').evaluate(parent)
+    assert Read('a').evaluate(parent) == Number(42)
     assert parent['a'] == Number(42)
 
 
