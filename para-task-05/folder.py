@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
-from yat.model import *
 from printer import *
 
 
 class ConstantFolder:
-
-    OK_ARITHM_EXPR = (Number, Reference, FunctionCall)
 
     def visit(self, tree):
         tree.accept(self)
