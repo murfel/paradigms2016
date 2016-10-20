@@ -39,7 +39,9 @@ class Number:
         self.value = value
 
     def __eq__(self, other):
-        return self.value == other.value
+        if isinstance(other, Number):
+            return self.value == other.value
+        return False
 
     def accept(self, visitor):
         visitor.visit_number(self)
