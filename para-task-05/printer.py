@@ -43,7 +43,7 @@ class PrettyPrinter:
 
     def visit_function_definition(self, func_def):
         self.result.append('def {}({}) {{'.format(func_def.name, ', '.join(
-            [Arithm().visit(arg) for arg in func_def.function.args])))
+            func_def.function.args)))
         self.add_stmt_block(func_def.function.body)
         self.result.append('};')
 
@@ -85,7 +85,7 @@ def my_tests():
 
     conditional2 = Conditional(number, [conditional])
 
-    function = Function([Reference('x'), Reference('y')],
+    function = Function(['x', 'y'],
                         [conditional2, Number(5)])
     definition = FunctionDefinition('foo', function)
     printer = PrettyPrinter()
