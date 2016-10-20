@@ -40,7 +40,7 @@ class ConstantFolder:
         rhs = self.visit(binop.rhs)
 
         if isinstance(lhs, Number) and isinstance(rhs, Number):
-            self.result = binop.evaluate(Scope())
+            self.result = BinaryOperation(lhs, binop.op, rhs).evaluate(Scope())
         elif ((isinstance(lhs, Number) and binop.lhs == Number(0)
                and isinstance(rhs, Reference)) or
               (isinstance(rhs, Number) and binop.rhs == Number(0)
@@ -85,6 +85,9 @@ def my_tests():
 
     assert ConstantFolder().visit(BinaryOperation(BinaryOperation(
         Number(8), '+', Number(13)), '+', Number(21))) == Number(42)
+
+    PrettyPrinter().visit(ConstantFolder().visit(
+        BinaryOperation(Reference('x'), '==', Number(3))))
 
     PrettyPrinter().visit(ConstantFolder().visit(Conditional(
         UnaryOperation('!', Number(42)), [])))
