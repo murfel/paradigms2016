@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from printer import *
+from yat.printer import *
 
 
 class ConstantFolder:
@@ -10,21 +10,21 @@ class ConstantFolder:
         return self.result
 
     def visit_function_definition(self, func_def):
-        args = map(self.visit, func_def.function.args)
-        body = map(self.visit, func_def.function.body)
+        args = list(map(self.visit, func_def.function.args))
+        body = list(map(self.visit, func_def.function.body))
         self.result = FunctionDefinition(func_def.name, Function(args, body))
 
     def visit_conditional(self, cond):
         condition = self.visit(cond.condition)
-        if_true = map(self.visit, cond.if_true)
+        if_true = list(map(self.visit, cond.if_true))
         if cond.if_false:
-            if_false = map(self.visit, cond.if_false)
+            if_false = list(map(self.visit, cond.if_false))
         else:
             if_false = None
         self.result = Conditional(condition, if_true, if_false)
 
     def visit_print(self, print_stmt):
-        self.result = Print(print_stmt.expr)
+        self.result = Print(self.visit(print_stmt.expr))
 
     def visit_read(self, read):
         self.result = Read(read.name)
@@ -59,10 +59,11 @@ class ConstantFolder:
             self.result = UnaryOperation(unop.op, unop.expr)
 
     def visit_function_call(self, func_call):
-        self.result = FunctionCall(self.visit(fun_expr), map(self.visit, args))
+        self.result = FunctionCall(self.visit(fun_expr),
+                                   list(map(self.visit, args)))
 
     def prosses_stmt_list(self, stmt_list):
-        return map(self.visit, stmt_list)
+        return list(map(self.visit, stmt_list))
 
 
 def my_tests():
