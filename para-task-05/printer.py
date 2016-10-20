@@ -23,8 +23,11 @@ class Arithm:
         self.result = '({}{})'.format(unop.op, self.visit(unop.expr))
 
     def visit_function_call(self, func_call):
-        self.result = '{}({})'.format(func_call.fun_expr.name, ', '.join(
-            map(self.visit, func_call.args)))
+        self.result = '{}({})'.format(self.visit(
+            func_call.fun_expr), ', '.join(map(self.visit, func_call.args)))
+
+    def visit_function_definition(self, fun_def):
+        self.result = fun_def.name
 
 
 class PrettyPrinter:
@@ -115,7 +118,12 @@ def my_tests():
     printer.visit(mul)
 
     reference = Reference('foo')
-    call = FunctionCall(reference, [mul, FunctionCall(reference, [Number(9), Reference('x'), UnaryOperation('-', Number(42)), Number(3)])])
+    call = FunctionCall(reference, [mul, FunctionCall(reference, [Number(
+        9), Reference('x'), UnaryOperation('-', Number(42)), Number(3)])])
+    printer = PrettyPrinter()
+    printer.visit(call)
+
+    call = FunctionCall(FunctionDefinition('bar', Function([], [])), [])
     printer = PrettyPrinter()
     printer.visit(call)
 
@@ -128,8 +136,6 @@ def my_tests():
     unary = UnaryOperation('-', number)
     printer = PrettyPrinter()
     printer.visit(unary)
-
-
 
 
 if __name__ == '__main__':
