@@ -26,9 +26,6 @@ class Arithm:
         self.result = '{}({})'.format(self.visit(
             func_call.fun_expr), ', '.join(map(self.visit, func_call.args)))
 
-    def visit_function_definition(self, fun_def):
-        self.result = fun_def.name
-
 
 class PrettyPrinter:
 
@@ -68,9 +65,10 @@ class PrettyPrinter:
         self.result.append(Arithm().visit(expr) + ';')
 
     def add_stmt_block(self, stmt_block):
-        for stmt in stmt_block:
-            for line in PrettyPrinter(self.indent).visit_silently(stmt):
-                self.result.append('{}{}'.format(self.indent, line))
+        self.result.extend(['{}{}'.format(self.indent, line)
+                            for stmt in stmt_block
+                            for line in PrettyPrinter(
+                                self.indent).visit_silently(stmt)])
 
     visit_number = visit_arithm_as_sentence
     visit_reference = visit_arithm_as_sentence
@@ -120,10 +118,6 @@ def my_tests():
     reference = Reference('foo')
     call = FunctionCall(reference, [mul, FunctionCall(reference, [Number(
         9), Reference('x'), UnaryOperation('-', Number(42)), Number(3)])])
-    printer = PrettyPrinter()
-    printer.visit(call)
-
-    call = FunctionCall(FunctionDefinition('bar', Function([], [])), [])
     printer = PrettyPrinter()
     printer.visit(call)
 
