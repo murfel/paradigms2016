@@ -11,6 +11,8 @@ class Arithm:
 
     def visit_number(self, num):
         self.result = str(num.value)
+        if num.value < 0:
+            self.result = '({})'.format(self.result)
 
     def visit_reference(self, ref):
         self.result = ref.name
@@ -23,8 +25,9 @@ class Arithm:
         self.result = '({}{})'.format(unop.op, self.visit(unop.expr))
 
     def visit_function_call(self, func_call):
-        self.result = '{}({})'.format(self.visit(
-            func_call.fun_expr), ', '.join(map(self.visit, func_call.args)))
+        self.result = '{}({})'.format(self.visit(func_call.fun_expr),
+                                      ', '.join(map(self.visit,
+                                                    func_call.args)))
 
 
 class PrettyPrinter:
@@ -42,8 +45,8 @@ class PrettyPrinter:
         return self.result
 
     def visit_function_definition(self, func_def):
-        self.result.append('def {}({}) {{'.format(func_def.name, ', '.join(
-            func_def.function.args)))
+        self.result.append('def {}({}) {{'.format(
+            func_def.name, ', '.join(func_def.function.args)))
         self.add_stmt_block(func_def.function.body)
         self.result.append('};')
 
@@ -126,7 +129,7 @@ def my_tests():
     printer = PrettyPrinter()
     printer.visit(print)
 
-    number = Number(42)
+    number = Number(-42)
     unary = UnaryOperation('-', number)
     printer = PrettyPrinter()
     printer.visit(unary)
