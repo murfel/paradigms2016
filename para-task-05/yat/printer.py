@@ -65,7 +65,7 @@ class PrettyPrinter:
         self.result.append('read {};'.format(read.name))
 
     def visit_arithm_as_sentence(self, expr):
-        self.result.append(Arithm().visit(expr) + ';')
+        self.result.append(str(Arithm().visit(expr)) + ';')
 
     def add_stmt_block(self, stmt_block):
         self.result.extend(['{}{}'.format(self.indent, line)

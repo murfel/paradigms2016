@@ -10,10 +10,9 @@ class ConstantFolder:
         return self.result
 
     def visit_function_definition(self, func_def):
-        args = list(map(self.visit, func_def.function.args))
         body = list(map(self.visit, func_def.function.body))
-        self.result = FunctionDefinition(func_def.name,
-                                         Function(args, body))
+        self.result = FunctionDefinition(
+            func_def.name, Function(func_def.function.args, body))
 
     def visit_conditional(self, cond):
         condition = self.visit(cond.condition)
@@ -72,6 +71,11 @@ def my_tests():
     CF = ConstantFolder
     UnOp = UnaryOperation
     BinOp = BinaryOperation
+    Fun = Function
+    FunDef = FunctionDefinition
+    FunCall = FunctionCall
+    Ref = Reference
+    Cond = Conditional
 
     assert ConstantFolder().visit(UnaryOperation('!', Number(42))) == Number(0)
     assert ConstantFolder().visit(UnaryOperation('!', Number(0))) != Number(0)
@@ -81,7 +85,11 @@ def my_tests():
         UnaryOperation('-', Number(42))) == Number(-42)
 
     assert (CF().visit(UnOp('-', BinOp(Number(3), '+', Number(8))))
-        == Number(-11))
+            == Number(-11))
+
+    PP().visit(CF().visit(UnOp('-', Ref('x'))))
+    assert CF().visit(UnOp('-', Ref('x'))).op == '-'
+    assert CF().visit(UnOp('-', Ref('x'))).expr.name == 'x'
 
     assert ConstantFolder().visit(BinaryOperation(
         Number(8), '+', Number(13))) == Number(21)
@@ -106,6 +114,10 @@ def my_tests():
 
     fun_call_opti = ConstantFolder().visit(fun_call)
     PrettyPrinter().visit(fun_call_opti)
+
+    PP().visit(CF().visit(FunDef('foo', Fun(['a', 'b'],
+                                 [UnOp('-', Number(3)), Ref('42')]))))
+
 
 if __name__ == '__main__':
     my_tests()
