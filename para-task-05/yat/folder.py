@@ -41,22 +41,21 @@ class ConstantFolder:
 
         if isinstance(lhs, Number) and isinstance(rhs, Number):
             self.result = BinaryOperation(lhs, binop.op, rhs).evaluate(Scope())
-        elif ((isinstance(lhs, Number) and lhs == Number(0)
-               and isinstance(rhs, Reference) and binop.op == '*') or
-              (isinstance(rhs, Number) and rhs == Number(0)
-               and isinstance(lhs, Reference) and binop.op == '*') or
-              (isinstance(lhs, Reference) and isinstance(rhs, Reference)
-               and lhs.name == rhs.name and binop.op == '-')):
+        elif ((isinstance(lhs, Number) and lhs == Number(0) and
+               isinstance(rhs, Reference) and binop.op == '*') or
+              (isinstance(rhs, Number) and rhs == Number(0) and
+               isinstance(lhs, Reference) and binop.op == '*') or
+              (isinstance(lhs, Reference) and isinstance(rhs, Reference) and
+               lhs.name == rhs.name and binop.op == '-')):
             self.result = Number(0)
         else:
             self.result = BinaryOperation(lhs, binop.op, rhs)
 
     def visit_unary_operation(self, unop):
         expr = self.visit(unop.expr)
+        self.result = UnaryOperation(unop.op, expr)
         if isinstance(expr, Number):
-            self.result = unop.evaluate(Scope())
-        else:
-            self.result = UnaryOperation(unop.op, expr)
+            self.result = self.result.evaluate(Scope())
 
     def visit_function_call(self, func_call):
         self.result = FunctionCall(self.visit(func_call.fun_expr),
@@ -84,10 +83,11 @@ def my_tests():
     assert ConstantFolder().visit(
         UnaryOperation('-', Number(42))) == Number(-42)
 
-    assert (CF().visit(UnOp('-', BinOp(Number(3), '+', Number(8))))
-            == Number(-11))
+    assert (CF().visit(UnOp('-', BinOp(Number(3), '+', Number(8)))) ==
+            Number(-11))
 
-    PP().visit(CF().visit(UnOp('-', Ref('x'))))
+    PP().visit(CF().visit(UnOp('-', BinOp(Ref('x'), '-', Ref('x')))))
+
     assert CF().visit(UnOp('-', Ref('x'))).op == '-'
     assert CF().visit(UnOp('-', Ref('x'))).expr.name == 'x'
 
