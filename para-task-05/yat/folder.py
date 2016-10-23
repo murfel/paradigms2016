@@ -12,9 +12,8 @@ class ConstantFolder:
     def visit_function_definition(self, func_def):
         args = list(map(self.visit, func_def.function.args))
         body = list(map(self.visit, func_def.function.body))
-        self.result = FunctionDefinition(
-            func_def.name,
-            Function(func_def.function.args, func_def.function.body))
+        self.result = FunctionDefinition(func_def.name,
+                                         Function(args, body))
 
     def visit_conditional(self, cond):
         condition = self.visit(cond.condition)
@@ -58,7 +57,7 @@ class ConstantFolder:
         if isinstance(expr, Number):
             self.result = unop.evaluate(Scope())
         else:
-            self.result = UnaryOperation(unop.op, unop.expr)
+            self.result = UnaryOperation(unop.op, expr)
 
     def visit_function_call(self, func_call):
         self.result = FunctionCall(self.visit(func_call.fun_expr),
@@ -69,12 +68,20 @@ class ConstantFolder:
 
 
 def my_tests():
+    PP = PrettyPrinter
+    CF = ConstantFolder
+    UnOp = UnaryOperation
+    BinOp = BinaryOperation
+
     assert ConstantFolder().visit(UnaryOperation('!', Number(42))) == Number(0)
     assert ConstantFolder().visit(UnaryOperation('!', Number(0))) != Number(0)
     assert ConstantFolder().visit(
         UnaryOperation('-', UnaryOperation('-', Number(42)))) == Number(42)
     assert ConstantFolder().visit(
         UnaryOperation('-', Number(42))) == Number(-42)
+
+    assert (CF().visit(UnOp('-', BinOp(Number(3), '+', Number(8))))
+        == Number(-11))
 
     assert ConstantFolder().visit(BinaryOperation(
         Number(8), '+', Number(13))) == Number(21)
