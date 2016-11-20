@@ -42,6 +42,8 @@ concat' (x:xs) s2 = x:concat' xs s2
 -- 8. quickSort' возвращает его отсортированный список (0,5)
 quickSort' :: Ord a => [a] -> [a]
 quickSort' [] = []
-quickSort' (x:xs) = concat' (concat' (quickSort' left) [x]) (quickSort' right)
-                    where left = filter' (<= x) xs
-                          right = filter' (>= x) xs
+quickSort' s = concat' (concat' (quickSort' left) middle) (quickSort' right)
+               where x = head' s
+                     left = filter' (< x) s
+                     middle = filter' (== x) s
+                     right = filter' (> x) s
