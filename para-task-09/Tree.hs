@@ -11,17 +11,17 @@ lookup key (Node k v left right) | key == k = Just v
 lookup _ _ = Nothing
 
 insert :: Ord k => k -> v -> BinaryTree k v -> BinaryTree k v
-insert key val (Node k v left right) | key == k = Node key val left right
-                                     | key < k = Node k v (insert key val left) right
-                                     | key > k = Node k v left (insert key val right)
+insert key val (Node k v l r) | key == k = Node key val l r
+                              | key < k = Node k v (insert key val l) r
+                              | key > k = Node k v l (insert key val r)
 insert key val _ = Node key val Nil Nil
 
 merge :: Ord k => BinaryTree k v -> BinaryTree k v -> BinaryTree k v
-merge (Node k v subleft subright) right = merge (merge subleft subright) (insert k v right)
-merge _ right = right
+merge left (Node k v Nil r) = Node k v left r
+merge left (Node k v l r) = merge left l
 
 delete :: Ord k => k -> BinaryTree k v -> BinaryTree k v
-delete key (Node k v left right) | key == k = merge left right
-                                 | key < k = Node k v (delete key left) right
-                                 | key > k = Node k v left (delete key right)
+delete key (Node k v l r) | key == k = merge l r
+                          | key < k = Node k v (delete key l) r
+                          | key > k = Node k v l (delete key r)
 delete key _ = Nil
