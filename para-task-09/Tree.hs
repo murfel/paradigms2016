@@ -18,7 +18,7 @@ insert key val _ = Node key val Nil Nil
 
 merge :: Ord k => BinaryTree k v -> BinaryTree k v -> BinaryTree k v
 merge left (Node k v Nil r) = Node k v left r
-merge left (Node k v l r) = merge left l
+merge left (Node k v l r) = merge (merge left l) r
 
 delete :: Ord k => k -> BinaryTree k v -> BinaryTree k v
 delete key (Node k v l r) | key == k = merge l r
