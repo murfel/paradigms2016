@@ -227,7 +227,7 @@ class UnaryOperation:
 
     def evaluate(self, scope):
         expr_value = self.expr.evaluate(scope).value
-        return Number(self.sym_to_op[self.op](expr_value))
+        return Number(int(self.sym_to_op[self.op](expr_value)))
 
 
 def example():
