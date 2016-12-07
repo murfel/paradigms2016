@@ -1,2 +1,2 @@
-select governmentform, surfacearea from country
+select governmentform, sum(surfacearea) from country
 group by governmentform;
