@@ -1,7 +1,8 @@
-#include <thread_pool.h>
-#include <computation.h>
+#include "thread_pool.h"
+#include "computation.h"
 #include <pthread.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 // Отправляет вычисление в очередь thread pool. Функция
 // on_complete будет вызвана с параметром on_complete_arg,
@@ -33,7 +34,7 @@ void thpool_submit_computation(
 // thpool_submit_computation.
 void thpool_complete_computation(struct Computation *computation) {
     pthread_mutex_lock(&computation->guard);
-    computation->task->finished = true;
+    computation->finished = true;
     pthread_cond_signal(&computation->finished_cond);
     pthread_mutex_unlock(&computation->guard);
 
@@ -46,12 +47,11 @@ void thpool_complete_computation(struct Computation *computation) {
 // освобождает выделенные в thpool_submit_computation ресурсы.
 void thpool_wait_computation(struct Computation *computation) {
     pthread_mutex_lock(&computation->guard);
-
     while (!computation->finished) {
         pthread_cond_wait(&computation->finished_cond, &computation->guard);
     }
-
     pthread_mutex_unlock(&computation->guard);
+
     pthread_cond_destroy(&computation->finished_cond);
     pthread_mutex_destroy(&computation->guard);
 }
