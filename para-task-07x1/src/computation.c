@@ -1,5 +1,6 @@
 #include <thread_pool.h>
 #include <computation.h>
+#include <pthread.h>
 #include <stdlib.h>
 
 // Отправляет вычисление в очередь thread pool. Функция
@@ -20,6 +21,10 @@ void thpool_submit_computation(
     computation->on_complete = on_complete;
     computation->on_complete_arg = on_complete_arg;
 
+    pthread_mutex_init(&computation->guard, NULL);
+    pthread_cond_init(&computation->finished_cond, NULL);
+    computation->finished = false;
+
     thpool_submit(pool, computation->task);
 }
 
@@ -27,7 +32,10 @@ void thpool_submit_computation(
 // вызывает функцию on_complete, которая была передана в
 // thpool_submit_computation.
 void thpool_complete_computation(struct Computation *computation) {
+    pthread_mutex_lock(&computation->guard);
     computation->task->finished = true;
+    pthread_cond_signal(&computation->finished_cond);
+    pthread_mutex_unlock(&computation->guard);
 
     if (computation->on_complete) {
         (computation->on_complete)(computation->on_complete_arg);
@@ -37,5 +45,13 @@ void thpool_complete_computation(struct Computation *computation) {
 // Блокируется, пока вычислительная задача не завершена,
 // освобождает выделенные в thpool_submit_computation ресурсы.
 void thpool_wait_computation(struct Computation *computation) {
-    thpool_wait(computation->task);
+    pthread_mutex_lock(&computation->guard);
+
+    while (!computation->finished) {
+        pthread_cond_wait(&computation->finished_cond, &computation->guard);
+    }
+
+    pthread_mutex_unlock(&computation->guard);
+    pthread_cond_destroy(&computation->finished_cond);
+    pthread_mutex_destroy(&computation->guard);
 }

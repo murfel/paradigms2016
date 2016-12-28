@@ -10,6 +10,10 @@ struct Computation {
     void* arg;
     // Любые поля на ваше усмотрение.
     struct Task *task;
+
+    pthread_mutex_t guard;
+    pthread_cond_t finished_cond;
+    bool finished;
     OnComputationComplete on_complete;
     void * on_complete_arg;
 };

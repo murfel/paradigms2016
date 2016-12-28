@@ -49,6 +49,7 @@ void test_simple() {
     thpool_wait_computation(computation);
 }
 
+/*
 void test_chain() {
     struct ThreadPool *pool = malloc(sizeof(struct ThreadPool));
     unsigned threads_nm = 2;
@@ -73,7 +74,7 @@ void test_chain() {
     thpool_wait_computation(computation);
     thpool_complete_computation(computation);
 }
-
+*/
 
 int main() {
     test_simple();

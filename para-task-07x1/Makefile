@@ -1,5 +1,5 @@
 INCLUDE=include/
-CFLAGS=-I$(INCLUDE) -std=c99
+CFLAGS=-I$(INCLUDE) -std=c99 -Wall -Wextra
 OBJS := bin/main.o bin/computation.o bin/linkedlist.o bin/queue.o bin/squeue.o bin/wsqueue.o bin/thread_pool.o
 
 all: main
