@@ -37,6 +37,7 @@ void thpool_complete_computation(struct Computation *computation) {
     pthread_cond_signal(&computation->finished_cond);
     pthread_mutex_unlock(&computation->guard);
 
+
     if (computation->on_complete) {
         (computation->on_complete)(computation->on_complete_arg);
     }
@@ -53,4 +54,6 @@ void thpool_wait_computation(struct Computation *computation) {
 
     pthread_cond_destroy(&computation->finished_cond);
     pthread_mutex_destroy(&computation->guard);
+
+    thpool_wait(&computation->task);
 }

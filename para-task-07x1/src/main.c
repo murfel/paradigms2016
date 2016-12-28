@@ -31,8 +31,8 @@ void test_simple() {
 
     thpool_wait_computation(computation);
 
-    thpool_finit(pool);
     free(computation);
+    thpool_finit(pool);
     free(pool);
 }
 
