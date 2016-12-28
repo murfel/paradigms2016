@@ -16,9 +16,8 @@ void thpool_submit_computation(
     OnComputationComplete on_complete,
     void* on_complete_arg
 ) {
-    computation->task = malloc(sizeof(struct Task));
-    computation->task->f = computation->f;
-    computation->task->arg = computation->arg;
+    computation->task.f = computation->f;
+    computation->task.arg = computation->arg;
     computation->on_complete = on_complete;
     computation->on_complete_arg = on_complete_arg;
 
@@ -26,7 +25,7 @@ void thpool_submit_computation(
     pthread_cond_init(&computation->finished_cond, NULL);
     computation->finished = false;
 
-    thpool_submit(pool, computation->task);
+    thpool_submit(pool, &computation->task);
 }
 
 // Помечает вычисление как “завершённое с учётом подзадач” и

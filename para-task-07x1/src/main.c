@@ -30,6 +30,10 @@ void test_simple() {
     );
 
     thpool_wait_computation(computation);
+
+    thpool_finit(pool);
+    free(computation);
+    free(pool);
 }
 
 int main() {
