@@ -14,21 +14,21 @@ except:
     from model import *
 
 
-def get_value(n):
+@patch('sys.stdout', new_callable=io.StringIO)
+def get_value(n, mock_stdout):
     Print(n).evaluate(Scope())
-    return int(sys.stdout.getvalue())
+    return int(mock_stdout.getvalue())
 
 
 class TestPrint():
 
-    def test_simple(self, monkeypatch):
+    def test_simple(self):
         Print(Number(42)).evaluate(Scope())
 
 
 class TestNumber():
 
-    @patch('sys.stdout', new_callable=io.StringIO)
-    def test_simple(self, monkeypatch):
+    def test_simple(self):
         assert get_value(Number(42)) == 42
 
     def test_evaluate(self):
@@ -71,21 +71,17 @@ class TestReference():
 
 class TestUnaryOperation():
 
-    @patch('sys.stdout', new_callable=io.StringIO)
-    def test_not_positive(self, monkeypatch):
+    def test_not_positive(self):
         assert get_value(UnaryOperation('!', Number(1)).evaluate(Scope())) == 0
 
-    @patch('sys.stdout', new_callable=io.StringIO)
-    def test_not_negative(self, monkeypatch):
+    def test_not_negative(self):
         assert get_value(UnaryOperation('!', Number(0)).evaluate(Scope())) != 0
 
-    @patch('sys.stdout', new_callable=io.StringIO)
-    def test_minus_positive(self, monkeypatch):
+    def test_minus_positive(self):
         assert get_value(
             UnaryOperation('-', Number(42)).evaluate(Scope())) == -42
 
-    @patch('sys.stdout', new_callable=io.StringIO)
-    def test_expand_operand(self, monkeypatch):
+    def test_expand_operand(self):
         assert get_value(
             UnaryOperation(
                 '-',
@@ -94,32 +90,33 @@ class TestUnaryOperation():
         ) == -1
 
 
-class TestBinaryOperation():
-    data = [('+', 100, 25, 125), ('-', 100, 25, 75),
-            ('*', 100, 25, 2500), ('/', 9, 2, 4), ('%', 10, 3, 1)]
-    data_logical = [('==', 3, 3, True), ('!=', 1, 3, True),
-                    ('<', 3, 5, True), ('>', 3, 5, False),
-                    ('<=', 5, 3, False), ('>=', 3, 3, True),
-                    ('&&', 1, 0, False), ('||', 1, 0, True)]
+data = [('+', 100, 25, 125), ('-', 100, 25, 75),
+        ('*', 100, 25, 2500), ('/', 9, 2, 4), ('%', 10, 3, 1)]
 
-    def test_arithmetic_ops(self, monkeypatch):
-        for op, left, right, ans in self.data:
-            monkeypatch.setattr(sys, 'stdout', io.StringIO())
-            assert (get_value(
-                        BinaryOperation(Number(left),
+data_logical = [('==', 3, 3, True), ('!=', 1, 3, True),
+                ('<', 3, 5, True), ('>', 3, 5, False),
+                ('<=', 5, 3, False), ('>=', 3, 3, True),
+                ('&&', 1, 0, False), ('||', 1, 0, True)]
+
+
+class TestBinaryOperation:
+
+    @pytest.mark.parametrize("op, left, right, ans", data)
+    def test_arithmetic_ops(self, op, left, right, ans):
+        assert (get_value(
+                BinaryOperation(Number(left),
+                                op,
+                                Number(right)).evaluate(Scope())) == ans)
+
+    @pytest.mark.parametrize("op, left, right, ans", data_logical)
+    def test_logical_ops(self, op, left, right, ans):
+        val = get_value(BinaryOperation(Number(left),
                                         op,
-                                        Number(right)).evaluate(Scope())
-                            ) == ans)
-
-    def test_logical_ops(self, monkeypatch):
-        for op, left, right, ans in self.data_logical:
-            monkeypatch.setattr(sys, 'stdout', io.StringIO())
-            val = get_value(BinaryOperation(Number(left), op,
-                                            Number(right)).evaluate(Scope()))
-            if ans:
-                assert (val != 0)
-            else:
-                assert (val == 0)
+                                        Number(right)).evaluate(Scope()))
+        if ans:
+            assert (val != 0)
+        else:
+            assert (val == 0)
 
 
 class TestConditional():
@@ -142,13 +139,11 @@ class TestConditional():
     def test_false_none_none(self):
         Conditional(Number(0), None)
 
-    @patch('sys.stdout', new_callable=io.StringIO)
-    def test_simple(self, monkeypatch):
+    def test_simple(self):
         assert get_value(Conditional(
             Number(1), [Number(42), Number(13)]).evaluate(Scope())) == 13
 
-    @patch('sys.stdout', new_callable=io.StringIO)
-    def test_check_condition(self, monkeypatch):
+    def test_check_condition(self):
         assert get_value(Conditional(Number(0), [Number(42), Number(13)], [
                          Number(8)]).evaluate(Scope())) == 8
 
@@ -161,12 +156,10 @@ class TestFunction():
     def test_empty_body(self):
         Function(('foo', 'bar'), []).evaluate(Scope())
 
-    @patch('sys.stdout', new_callable=io.StringIO)
-    def test_no_args(self, monkeypatch):
+    def test_no_args(self):
         assert get_value(Function((), [Number(42)]).evaluate(Scope())) == 42
 
-    @patch('sys.stdout', new_callable=io.StringIO)
-    def test_simple(self, monkeypatch):
+    def test_simple(self):
         assert get_value(
             Function(('foo', 'bar'), [Number(42), Number(13)]
                      ).evaluate(Scope())) == 13
@@ -174,8 +167,7 @@ class TestFunction():
 
 class TestFunctionCall():
 
-    @patch('sys.stdout', new_callable=io.StringIO)
-    def test_simple(self, monkeypatch):
+    def test_simple(self):
         fun = Function(('foo', 'bar'), [Number(
             42), Reference('foo'), Reference('bar')])
         fun_call = FunctionCall(FunctionDefinition(
@@ -198,16 +190,14 @@ class TestFunctionDefinition():
 
 class TestRead():
 
-    def test_update_scope(self, monkeypatch):
-        monkeypatch.setattr(sys, 'stdout', io.StringIO())
-        monkeypatch.setattr(sys, 'stdin', io.StringIO('777'))
+    @patch('sys.stdin', new=io.StringIO('777'))
+    def test_update_scope(self):
         scope = Scope()
         Read('num').evaluate(scope)
         assert get_value(scope['num']) == 777
 
-    def test_return_value(self, monkeypatch):
-        monkeypatch.setattr(sys, 'stdout', io.StringIO())
-        monkeypatch.setattr(sys, 'stdin', io.StringIO('777'))
+    @patch('sys.stdin', new=io.StringIO('777'))
+    def test_return_value(self):
         scope = Scope()
         assert get_value(Read('num').evaluate(scope)) == 777
 
