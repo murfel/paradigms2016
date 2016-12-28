@@ -1,3 +1,6 @@
+#ifndef __COMPUTATION_H__
+#define __COMPUTATION_H__
+
 #include <thread_pool.h>
 
 typedef void (*OnComputationComplete)(void*);
@@ -36,3 +39,4 @@ void thpool_complete_computation(struct Computation *computation);
 // освобождает выделенные в thpool_submit_computation ресурсы.
 void thpool_wait_computation(struct Computation *computation);
 
+#endif
