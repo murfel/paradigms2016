@@ -87,28 +87,32 @@ class TestUnaryOperation():
                 '-',
                 UnaryOperation('!', Number(0))
             ).evaluate(Scope())
-        ) == -1
-
-
-data = [('+', 100, 25, 125), ('-', 100, 25, 75),
-        ('*', 100, 25, 2500), ('/', 9, 2, 4), ('%', 10, 3, 1)]
-
-data_logical = [('==', 3, 3, True), ('!=', 1, 3, True),
-                ('<', 3, 5, True), ('>', 3, 5, False),
-                ('<=', 5, 3, False), ('>=', 3, 3, True),
-                ('&&', 1, 0, False), ('||', 1, 0, True)]
+        ) < 0
 
 
 class TestBinaryOperation:
 
-    @pytest.mark.parametrize("op, left, right, ans", data)
+    @pytest.mark.parametrize("op, left, right, ans",
+                             [('+', 100, 25, 125),
+                              ('-', 100, 25, 75),
+                              ('*', 100, 25, 2500),
+                              ('/', 9, 2, 4),
+                              ('%', 10, 3, 1)])
     def test_arithmetic_ops(self, op, left, right, ans):
         assert (get_value(
                 BinaryOperation(Number(left),
                                 op,
                                 Number(right)).evaluate(Scope())) == ans)
 
-    @pytest.mark.parametrize("op, left, right, ans", data_logical)
+    @pytest.mark.parametrize("op, left, right, ans",
+                             [('==', 3, 3, True),
+                              ('!=', 1, 3, True),
+                              ('<', 3, 5, True),
+                              ('>', 3, 5, False),
+                              ('<=', 5, 3, False),
+                              ('>=', 3, 3, True),
+                              ('&&', 1, 0, False),
+                              ('||', 1, 0, True)])
     def test_logical_ops(self, op, left, right, ans):
         val = get_value(BinaryOperation(Number(left),
                                         op,
@@ -168,8 +172,8 @@ class TestFunction():
 class TestFunctionCall():
 
     def test_simple(self):
-        fun = Function(('foo', 'bar'), [Number(
-            42), Reference('foo'), Reference('bar')])
+        fun = Function(('foo', 'bar'),
+                       [Number(42), Reference('foo'), Reference('bar')])
         fun_call = FunctionCall(FunctionDefinition(
             'fun', fun), (Number(1), Number(2)))
         assert get_value(fun_call.evaluate(Scope())) == 2
