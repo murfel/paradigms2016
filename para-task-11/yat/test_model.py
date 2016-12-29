@@ -126,22 +126,22 @@ class TestBinaryOperation:
 class TestConditional():
 
     def test_true_empty_none(self):
-        Conditional(Number(1), [])
+        Conditional(Number(1), []).evaluate(Scope())
 
     def test_true_empty_empty(self):
-        Conditional(Number(1), [], [])
+        Conditional(Number(1), [], []).evaluate(Scope())
 
     def test_false_empty_none(self):
-        Conditional(Number(0), [])
+        Conditional(Number(0), []).evaluate(Scope())
 
     def test_false_empty_empty(self):
-        Conditional(Number(0), [], [])
+        Conditional(Number(0), [], []).evaluate(Scope())
 
     def test_true_none_none(self):
-        Conditional(Number(1), None)
+        Conditional(Number(1), None).evaluate(Scope())
 
     def test_false_none_none(self):
-        Conditional(Number(0), None)
+        Conditional(Number(0), None).evaluate(Scope())
 
     def test_simple(self):
         assert get_value(Conditional(
